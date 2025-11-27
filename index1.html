@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Malla Interactiva - Contador Público</title>
+
+<!-- Fuentes -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    /* Paleta: sin blanco ni colores muy claros */
+    --bg:#26161f;        /* fondo general */
+    --panel:#321b27;     /* tarjetas */
+    --card:#3d2432;      /* materia */
+    --card-2:#4a2b3b;    /* materia aprobada */
+    --accent:#d65a8f;    /* rosa principal */
+    --accent-2:#b33e6a;  /* rosa oscuro */
+    --muted:#caa2b7;     /* texto secundario (no muy claro) */
+    --text:#f0cfe0;      /* texto principal (suave, no blanco) */
+    --locked:#4a3340;    /* fondo materia bloqueada */
+    --shadow: 0 8px 20px rgba(0,0,0,0.45);
+    --radius:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+    background: linear-gradient(180deg,var(--bg), #1f0f18);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    padding:18px;
+  }
+
+  header{
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    justify-content:space-between;
+    margin-bottom:18px;
+  }
+  .title {
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  h1{
+    margin:0;
+    font-family:"Playfair Display", serif;
+    font-weight:600;
+    font-size:20px;
+    color:var(--accent);
+  }
+  p.lead{margin:0;color:var(--muted);font-size:13px}
+
+  .controls{display:flex;gap:8px;align-items:center}
+  button, .btn {
+    border:0;
+    background:var(--accent);
+    color:var(--text);
+    padding:8px 12px;
+    border-radius:10px;
+    font-weight:600;
+    cursor:pointer;
+    box-shadow:var(--shadow);
+  }
+  .btn.ghost{
+    background:transparent;
+    color:var(--accent);
+    border:1px solid rgba(214,90,143,0.12);
+    box-shadow:none;
+  }
+
+  /* Grid de años */
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(5, minmax(0,1fr));
+    gap:14px;
+  }
+  @media (max-width:980px){
+    .grid{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (max-width:520px){
+    .grid{grid-template-columns:1fr}
+  }
+
+  .year-card{
+    background:linear-gradient(180deg,var(--panel), #2b1521);
+    border-radius:var(--radius);
+    padding:12px;
+    box-shadow:var(--shadow);
+    min-height:150px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .year-header{display:flex;align-items:center;justify-content:space-between}
+  .year-title{font-weight:700;color:var(--accent);font-size:15px}
+  .year-sub{font-size:12px;color:var(--muted)}
+
+  .subjects{display:grid;gap:8px}
+  .subject{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:10px;
+    border-radius:10px;
+    background:linear-gradient(180deg,var(--card),#2f1a24);
+    border:1px solid rgba(255,255,255,0.02);
+    cursor:pointer;
+    transition:transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+  }
+  .subject:hover{transform:translateY(-3px)}
+  .subject.locked{
+    background:var(--locked);
+    color:var(--muted);
+    cursor:not-allowed;
+    opacity:0.95;
+  }
+  .subject.approved{
+    background:linear-gradient(180deg,var(--card-2),#2f3940);
+    border:1px solid rgba(255,255,255,0.03);
+    box-shadow:0 8px 18px rgba(0,0,0,0.45);
+  }
+
+  .sub-left{display:flex;gap:10px;align-items:center}
+  .dot{
+    width:44px;height:44px;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;
+    color:var(--text);
+    background:linear-gradient(180deg,var(--accent),var(--accent-2));
+    box-shadow:0 6px 12px rgba(0,0,0,0.45);
+    flex-shrink:0;
+    font-size:14px;
+  }
+  .sub-info{display:flex;flex-direction:column}
+  .sub-name{font-size:13px;font-weight:600;color:var(--text)}
+  .sub-code{font-size:11px;color:var(--muted)}
+
+  .actions{display:flex;gap:8px;align-items:center}
+  .icon{
+    width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;
+    background:transparent;border:1px dashed rgba(255,255,255,0.03)
+  }
+
+  .legend{display:flex;gap:8px;align-items:center}
+  .chip{padding:6px 8px;border-radius:999px;font-size:12px}
+  .chip.approved{background:#2f3b38;color:#bfeadd}
+  .chip.locked{background:#4a2f3c;color:#ffc7e6}
+
+  footer{margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .count{font-size:13px;color:var(--muted)}
+  .small{font-size:12px;color:var(--muted)}
+
+  /* tooltip simple */
+  .tooltip{position:relative}
+  .tooltip:hover::after{
+    content:attr(data-tip);
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    bottom:calc(100% + 8px);
+    background:rgba(20,10,15,0.92);
+    color:var(--text);
+    padding:6px 8px;border-radius:6px;font-size:12px;white-space:nowrap;
+    box-shadow:0 6px 14px rgba(0,0,0,0.6);
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="title">
+      <h1>Malla Interactiva — Contador Público</h1>
+      <p class="lead">Marca materias como aprobadas. Las materias con correlativas quedan bloqueadas hasta aprobar los requisitos.</p>
+    </div>
+
+    <div class="controls" role="toolbar" aria-label="Controles de la malla">
+      <button id="resetBtn" class="btn ghost" title="Reiniciar progreso">Reiniciar</button>
+      <button id="exportBtn" class="btn" title="Exportar progreso">Exportar</button>
+      <button id="importBtn" class="btn" title="Importar progreso (JSON)">Importar</button>
+      <input id="fileInput" type="file" accept="application/json" style="display:none" />
+    </div>
+  </header>
+
+  <main>
+    <div class="grid" id="gridYears" aria-live="polite"></div>
+
+    <footer>
+      <div class="legend">
+        <div class="chip approved">Aprobada</div>
+        <div class="chip locked">Bloqueada</div>
+      </div>
+      <div class="count" id="statusCount">0 / 37 materias aprobadas</div>
+    </footer>
+  </main>
+
+  <small class="small" style="display:block;margin-top:12px">Progreso guardado localmente en tu navegador (localStorage).</small>
+
+<script>
+/* ----- Datos y configuración ----- */
+const STORAGE_KEY = 'malla_contador_progreso_v2';
+
+/* Lista de materias (id: número) y correlativas según tu estructura */
+const materias = [
+  // 1er año
+  { id:1,  name:'Introducción a las Ciencias Sociales', prereqs:[] },
+  { id:2,  name:'Introducción a la Economía', prereqs:[] },
+  { id:3,  name:'Introducción a la Administración', prereqs:[] },
+  { id:4,  name:'Derecho constitucional y administrativo', prereqs:[] },
+  { id:5,  name:'Introducción a la Contabilidad', prereqs:[] },
+  { id:6,  name:'Introducción a la Matemática', prereqs:[] },
+  { id:7,  name:'Derecho Privado', prereqs:[] },
+
+  // 2do año
+  { id:8,  name:'Sistemas y Procedimientos Administrativos', prereqs:[3] },
+  { id:9,  name:'Microeconomía', prereqs:[1,2] },
+  { id:10, name:'Contabilidad 1', prereqs:[5] },
+  { id:11, name:'Matemática para Contadores', prereqs:[6] },
+  { id:12, name:'Contabilidad 2', prereqs:[10] },
+  { id:13, name:'Macroeconomía', prereqs:[1,2] },
+  { id:14, name:'Métodos Estadísticos', prereqs:[11] },
+  { id:15, name:'Derecho Comercial', prereqs:[7] },
+
+  // 3er año
+  { id:16, name:'Contabilidad 3', prereqs:[12] },
+  { id:17, name:'Tecnología de la Información', prereqs:[8] },
+  { id:18, name:'Finanzas Públicas', prereqs:[4,9] },
+  { id:19, name:'Sociedades y Asociaciones', prereqs:[15] },
+  { id:20, name:'Matemática Financiera', prereqs:[11] },
+  { id:21, name:'Costos', prereqs:[8,14] },
+  { id:22, name:'Relaciones Laborales y de la Seguridad Social', prereqs:[4] },
+  { id:23, name:'Contabilidad 4', prereqs:[16] },
+
+  // 4to año
+  { id:24, name:'Impuestos 1', prereqs:[16,18] },
+  { id:25, name:'Contabilidad 5', prereqs:[23] },
+  { id:26, name:'Información para la Gestión', prereqs:[17,21] },
+  { id:27, name:'Estructura y Política Económica Argentina', prereqs:[18,13] },
+  { id:28, name:'Administración y Contabilidad Pública', prereqs:[8,12,18] },
+  { id:29, name:'Práctica Profesional de Aplicación Jurídica', prereqs:[22,23,19] },
+  { id:30, name:'Administración Financiera', prereqs:[8,14,20] },
+
+  // 5to año
+  { id:31, name:'Impuestos 2', prereqs:[24,22,19] },
+  { id:32, name:'Auditoría', prereqs:[17,21,23,19,22] },
+  { id:33, name:'Práctica Profesional de Aplicación Administrativo Contable', prereqs:[17,19,22,25] },
+  { id:34, name:'Asignaturas Optativas', prereqs:[] },
+  { id:35, name:'Concursos', prereqs:[17,19,22,23,29] },
+  { id:36, name:'Asignaturas Electivas', prereqs:[] },
+  { id:37, name:'Práctica Profesional Supervisada', prereqs:[] }
+];
+
+const anios = [
+  { label:'1er año', ids:[1,2,3,4,5,6,7] },
+  { label:'2do año', ids:[8,9,10,11,12,13,14,15] },
+  { label:'3er año', ids:[16,17,18,19,20,21,22,23] },
+  { label:'4to año', ids:[24,25,26,27,28,29,30] },
+  { label:'5to año', ids:[31,32,33,34,35,36,37] }
+];
+
+/* ----- Estado (Set de ids aprobadas) ----- */
+let aprobadas = loadProgress();
+
+/* ----- Funciones de almacenamiento ----- */
+function loadProgress(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return new Set();
+    const arr = JSON.parse(raw);
+    if(!Array.isArray(arr)) return new Set();
+    return new Set(arr);
+  } catch(e){
+    console.warn('Error leyendo progreso:', e);
+    return new Set();
+  }
+}
+
+function saveProgress(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(aprobadas)));
+    updateStatusCount();
+  } catch(e){
+    console.warn('Error guardando progreso:', e);
+  }
+}
+
+/* Exportar progreso como JSON descargable */
+function exportProgress(){
+  const data = { fecha: new Date().toISOString(), aprobadas: Array.from(aprobadas) };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'progreso_malla_contador.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/* Importar progreso desde JSON */
+function importProgressFile(file){
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const obj = JSON.parse(e.target.result);
+      if(Array.isArray(obj.aprobadas)){
+        aprobadas = new Set(obj.aprobadas.map(x => Number(x)).filter(n => !isNaN(n)));
+        saveProgress();
+        render();
+        alert('Progreso importado correctamente.');
+      } else {
+        alert('Archivo JSON inválido: falta propiedad "aprobadas".');
+      }
+    } catch(err){
+      alert('No se pudo leer el archivo: ' + err);
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ----- Helper: obtener materia por id ----- */
+function getMateria(id){ return materias.find(m => m.id === id); }
+
+/* ----- Chequear si una materia está desbloqueada (todas sus prereqs aprobadas) ----- */
+function isUnlocked(m){
+  if(!m.prereqs || m.prereqs.length === 0) return true;
+  return m.prereqs.every(r => aprobadas.has(r));
+}
+
+/* ----- Toggle aprobar/desaprobar ----- */
+function toggleAprobada(id){
+  const materia = getMateria(id);
+  if(!isUnlocked(materia) && !aprobadas.has(id)) {
+    // bloqueada: dar feedback (vibración si apoya)
+    if(navigator.vibrate) navigator.vibrate(35);
+    return;
+  }
+  if(aprobadas.has(id)) aprobadas.delete(id);
+  else aprobadas.add(id);
+
+  saveProgress();
+  render();
+}
+
+/* ----- Render de toda la malla ----- */
+function render(){
+  const container = document.getElementById('gridYears');
+  container.innerHTML = '';
+
+  anios.forEach(a => {
+    const sec = document.createElement('section');
+    sec.className = 'year-card';
+    sec.setAttribute('aria-label', a.label);
+
+    const header = document.createElement('div');
+    header.className = 'year-header';
+    const title = document.createElement('div');
+    title.innerHTML = `<div class="year-title">${a.label}</div><div class="year-sub">${a.ids.length} materias</div>`;
+    header.appendChild(title);
+
+    const right = document.createElement('div');
+    right.className = 'year-sub';
+    const aprox = a.ids.filter(id => aprobadas.has(id)).length;
+    right.textContent = `${aprox} aprobadas`;
+    header.appendChild(right);
+
+    sec.appendChild(header);
+
+    const subjects = document.createElement('div');
+    subjects.className = 'subjects';
+
+    a.ids.forEach(id => {
+      const m = getMateria(id);
+      const unlocked = isUnlocked(m);
+      const approved = aprobadas.has(id);
+
+      const item = document.createElement('button');
+      item.className = 'subject';
+      item.type = 'button';
+      if(approved) item.classList.add('approved');
+      if(!unlocked && !approved) item.classList.add('locked');
+      item.setAttribute('data-id', id);
+      item.setAttribute('aria-pressed', approved ? 'true' : 'false');
+      item.setAttribute('aria-disabled', (!unlocked && !approved) ? 'true' : 'false');
+      item.title = approved ? 'Click para desmarcar como aprobada' : (unlocked ? 'Click para marcar como aprobada' : 'Bloqueada - faltan correlativas');
+
+      // Left: número + nombre
+      const left = document.createElement('div');
+      left.className = 'sub-left';
+      const dot = document.createElement('div');
+      dot.className = 'dot';
+      dot.textContent = id;
+      left.appendChild(dot);
+
+      const info = document.createElement('div');
+      info.className = 'sub-info';
+      const name = document.createElement('div');
+      name.className = 'sub-name';
+      name.textContent = m.name;
+      const code = document.createElement('div');
+      code.className = 'sub-code';
+      if(m.prereqs && m.prereqs.length) {
+        code.textContent = 'Correlativas: ' + m.prereqs.join(', ');
+      } else {
+        code.textContent = 'Sin correlativas';
+      }
+      info.appendChild(name); info.appendChild(code);
+      left.appendChild(info);
+
+      // Right: icono / lock
+      const rightBox = document.createElement('div');
+      rightBox.className = 'actions';
+
+      if(!unlocked && !approved){
+        const lock = document.createElement('div');
+        lock.className = 'icon lock tooltip';
+        const missing = m.prereqs.filter(p => !aprobadas.has(p));
+        lock.setAttribute('data-tip', 'Faltan: ' + (missing.length ? missing.join(', ') : '—'));
+        lock.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
+        rightBox.appendChild(lock);
+      } else {
+        const check = document.createElement('div');
+        check.className = 'icon tooltip';
+        check.setAttribute('data-tip', approved ? 'Aprobada' : 'Disponible');
+        check.innerHTML = approved ?
+          ('<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>') :
+          ('<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>');
+        rightBox.appendChild(check);
+      }
+
+      item.appendChild(left);
+      item.appendChild(rightBox);
+
+      // click handler
+      item.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        if(!unlocked && !approved){
+          if(navigator.vibrate) navigator.vibrate(30);
+          return;
+        }
+        toggleAprobada(id);
+      });
+
+      subjects.appendChild(item);
+    });
+
+    sec.appendChild(subjects);
+    container.appendChild(sec);
+  });
+
+  updateStatusCount();
+}
+
+/* ----- Actualiza contador en footer ----- */
+function updateStatusCount(){
+  const total = materias.length;
+  const aprox = aprobadas.size;
+  const el = document.getElementById('statusCount');
+  if(el) el.textContent = `${aprox} / ${total} materias aprobadas`;
+}
+
+/* ----- Botones y eventos ----- */
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if(confirm('¿Deseás reiniciar todo el progreso?')) {
+    aprobadas = new Set();
+    saveProgress();
+    render();
+  }
+});
+document.getElementById('exportBtn').addEventListener('click', exportProgress);
+
+const importBtn = document.getElementById('importBtn');
+const fileInput = document.getElementById('fileInput');
+importBtn.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', (e) => {
+  const f = e.target.files[0];
+  if(f) importProgressFile(f);
+  fileInput.value = '';
+});
+
+/* Guardado automático al cerrar/reload */
+window.addEventListener('beforeunload', () => { saveProgress(); });
+
+/* Render inicial */
+render();
+
+</script>
+</body>
+</html>
